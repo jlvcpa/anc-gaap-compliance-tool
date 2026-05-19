@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANC Financial Remediation & Costing Terminal</title>
+    <style>
+        :root {
+            --primary-bg: #1A365D; --primary-text: #FFFFFF;
+            --accent-blue: #2980B9; --danger-red: #C0392B;
+            --success-green: #27AE60; --warning-yellow: #F39C12;
+            --surface-light: #ECF0F1; --border-color: #BDC3C7;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #F8F9FA; margin: 0; padding: 20px; }
+       .dashboard-container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: var(--primary-bg); border-bottom: 2px solid var(--accent-blue); padding-bottom: 8px; }
+        
+       .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+       .full-width { grid-column: 1 / -1; }
+        
+       .panel { background: var(--surface-light); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; }
+       .metric-card { background: white; border-left: 5px solid var(--accent-blue); padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+       .metric-danger { border-left-color: var(--danger-red); }
+       .metric-success { border-left-color: var(--success-green); }
+       .metric-warning { border-left-color: var(--warning-yellow); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; background: white; }
+        th, td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
+        th { background-color: var(--primary-bg); color: white; }
+        td.numeric { text-align: right; font-family: monospace; }
+        tr.total-row { font-weight: bold; background-color: #D6EAF8; }
+        
+        input[type="number"], input[type="text"], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+       .calc-readonly { background-color: #E8F8F5; font-weight: bold; text-align: right; }
+        
+       .btn-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        button { padding: 10px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; transition: background 0.2s; }
+       .btn-primary { background-color: var(--accent-blue); }
+       .btn-success { background-color: var(--success-green); }
+       .btn-danger { background-color: var(--danger-red); }
+       .btn-warning { background-color: var(--warning-yellow); color: #333; }
+        button:hover { filter: brightness(1.1); }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>ANC Financial Remediation & Costing Terminal</h1>
+        
+        <div class="panel full-width">
+            <h3>Phase 1: System Initialization & Data Ingestion</h3>
+            <p>Upload the <code>anc_master_data.json</code> file to synchronize machine capacities, baseline costs, and compliance parameters.</p>
+            <input type="file" id="dataIngestion" accept=".json">
+            <div id="ingestionStatus" style="margin-top: 10px; font-weight: bold; color: var(--danger-red);">Awaiting Data Ingestion...</div>
+        </div>
+
+        <div class="grid-layout" id="mainWorkspace" style="display: none;">
+            
+            <div class="panel">
+                <h2>ASC 360: Machine Overhead Burdening</h2>
+                <div class="metric-card metric-danger" style="margin-bottom: 15px;">
+                    <strong>Unrecorded Machinery Base:</strong> $<span id="dispMachineryBase">0.00</span>
+                </div>
+                <p>Calculates the fully burdened overhead rate to rectify the omission of systematic depreciation allocation across production machinery.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Machine Class</th>
+                            <th>Uptime Capacity (Hrs/Yr)</th>
+                            <th class="numeric">Allocated Rate ($/Hr)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="depreciationTableBody"></tbody>
+                </table>
+                <div class="btn-group">
+                    <button class="btn-primary" id="btnCalculateOverhead">Compute Hourly Burden Rates</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>GAAP Compliance & Remediation Entries</h2>
+                <div class="metric-card metric-warning" style="margin-bottom: 10px;">
+                    <strong>SBA Loan Bifurcation (ASC 470):</strong> Mechanically calculates the 12-month current portion of the $3,515,600 facility for reclassification.
+                </div>
+                <div class="metric-card metric-danger" style="margin-bottom: 15px;">
+                    <strong>CECL AR Provision (ASC 326):</strong> Generates reserves against critical delinquencies (Carefast Products Inc. & Jedda Blue LLC).
+                </div>
+                <div class="metric-card metric-danger" style="margin-bottom: 15px;">
+                    <strong>Internal Control Override:</strong> Initiates purge sequence for internal vendor commingling (AME-007).
+                </div>
+                <div class="btn-group">
+                    <button class="btn-success" id="btnGenerateJournals">Generate Adjusting Journal Entries</button>
+                    <button class="btn-danger" id="btnPurgeAme007">Purge Commingled Entity (AME-007)</button>
+                </div>
+            </div>
+
+            <div class="panel full-width">
+                <h2>Product Assembly & Standard Costing (Rectified)</h2>
+                <p>Constructs fully burdened product costs, actively intercepting and overriding systemic zero-book-value inventory glitches.</p>
+                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div style="flex: 1;">
+                        <label>Target Work Order ID</label>
+                        <input type="text" id="woId" placeholder="e.g. 26394-5">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Batch Quantity Produced</label>
+                        <input type="number" id="batchQty" value="1000">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Assigned Production Machine</label>
+                        <select id="machineSelect"></select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Continuous Run Time (Hours)</label>
+                        <input type="number" id="runTimeHrs" value="1.0" step="0.01">
+                    </div>
+                </div>
+
+                <h3>Bill of Materials (BOM)</h3>
+                <table id="bomTable">
+                    <thead>
+                        <tr>
+                            <th>Raw Material SKU</th>
+                            <th class="numeric">Quantity Req. (KG)</th>
+                            <th class="numeric">Unit Cost ($)</th>
+                            <th class="numeric">Total Material Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bomBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4">
+                                <button class="btn-primary" style="padding: 5px 10px;" id="btnAddMaterial">+ Add Ingredient</button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <table style="margin-top: 25px;">
+                    <tr class="total-row">
+                        <td>Total Direct Materials</td>
+                        <td class="numeric calc-readonly" id="totMaterial">$0.00</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Allocated Factory Overhead (Fully Burdened)</td>
+                        <td class="numeric calc-readonly" id="totOverhead">$0.00</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Total Standard Batch Cost</td>
+                        <td class="numeric calc-readonly" id="totBatchCost">$0.00</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td style="color: var(--primary-bg);">Rectified Standard Cost Per Unit</td>
+                        <td class="numeric calc-readonly" id="totUnitCost" style="font-size: 1.2rem; color: var(--success-green);">$0.00</td>
+                    </tr>
+                </table>
+                <div class="btn-group" style="justify-content: flex-end;">
+                    <button class="btn-success" id="btnExportCosting">Export Costing Profile (JSON)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="./modules/app.js"></script>
+</body>
+</html>
