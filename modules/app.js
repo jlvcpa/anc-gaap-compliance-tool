@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Phase 1: Data Ingestion & State Initialization
     ingestionInput.addEventListener('change', (e) => {
-        const file = e.target.files;
+        const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
