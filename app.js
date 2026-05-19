@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let masterData = [];
     let activeRowIndex = -1;
     let activeRowRef = null;
-    let lastPriceMode = 'price'; // Tracks 2-way binding origin ('price' or 'margin')
+    let lastPriceMode = 'price'; 
 
     const loadJsonInput = document.getElementById('loadJsonInput');
     const saveJsonBtn = document.getElementById('saveJsonBtn');
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addLaborBtn').addEventListener('click', () => addLaborRow());
     document.getElementById('addOhBtn').addEventListener('click', () => addOhRow());
     
-    // Sync Process Yield input with the active row's Quantity
     pYieldInput.addEventListener('input', (e) => {
         if (activeRowIndex >= 0) {
             masterData[activeRowIndex]["Quantity"] = parseFloat(e.target.value) || 0;
@@ -29,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2-Way Binding Listeners for Pricing
     pMarginInput.addEventListener('input', () => {
         lastPriceMode = 'margin';
         window.calcTrigger();
@@ -40,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.calcTrigger();
     });
 
-    // File Ingestion
     loadJsonInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -63,10 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         reader.readAsText(file);
-        e.target.value = ''; // Reset
+        e.target.value = ''; 
     });
 
-    // File Exports
     saveJsonBtn.addEventListener('click', () => {
         const dataStr = JSON.stringify(masterData, null, 2);
         const blob = new Blob([dataStr], { type: "application/json" });
@@ -89,19 +85,17 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
     });
 
-    // Sorting Engine
     function sortMasterData() {
         masterData.sort((a, b) => {
             let dateA = a["Start"] ? new Date(a["Start"]).getTime() : Infinity; 
             let dateB = b["Start"] ? new Date(b["Start"]).getTime() : Infinity; 
             
-            if (dateA !== dateB) return dateB - dateA; // Descending (latest to oldest)
+            if (dateA !== dateB) return dateB - dateA; 
             return (a["WO"] || "").localeCompare(b["WO"] || "");
         });
         if (activeRowRef) activeRowIndex = masterData.indexOf(activeRowRef);
     }
 
-    // Add / Delete Batch
     addNewBatchBtn.addEventListener('click', () => {
         if (activeRowIndex >= 0) saveBuilderStateToRow(activeRowIndex); 
 
@@ -114,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         masterData.push(newBatch); 
         activeRowRef = newBatch;
-        sortMasterData(); // Forces the empty date row to index 0
+        sortMasterData(); 
         renderDataGrid();
         
         const newTr = document.querySelector(`#masterDataGrid tbody`).children[activeRowIndex];
@@ -136,7 +130,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Inline Editable Grid Core Logic ---
     function formatDayDate(val) {
         if(!val) return '';
         if(val.includes(',')) return val; 
@@ -217,12 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
         masterData.forEach((row, index) => {
             const tr = document.createElement('tr');
             tr.onclick = (e) => {
-                // Prevent row selection if interacting with editor elements
                 if(['INPUT', 'SELECT', 'BUTTON'].includes(e.target.tagName) || e.target.classList.contains('edit-icon')) return;
                 selectRow(index, tr);
             };
             
-            // Build Integrated Notes
             let integratedNotes = window.makeEditable(index, 'Notes', row["Notes"], 'text');
             if (row.costBuilder) {
                 const combinedBuilderNotes = [
@@ -236,33 +227,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Calculations
             let um = parseFloat(row["Units/Minute"]) || 0;
             let uh = parseFloat(row["units/Hours"]) || 0;
-            if(!uh && um) uh = um * 60; // Default calc if empty
+            if(!uh && um) uh = um * 60; 
 
             tr.innerHTML = `
                 <td><button class="btn-del" onclick="window.deleteRow(${index}, event)">X</button></td>
-                <td>${window.makeEditable(index, 'WO', row["WO"])}</td>
-                <td>${window.makeEditable(index, 'Dash', row["Dash"])}</td>
+                <td class="align-right">${window.makeEditable(index, 'WO', row["WO"])}</td>
+                <td class="align-right">${window.makeEditable(index, 'Dash', row["Dash"])}</td>
                 <td>${window.makeEditable(index, 'Item Number', row["Item Number"])}</td>
-                <td style="white-space: normal;">${window.makeEditable(index, 'Item Description', row["Item Description"])}</td>
-                <td style="background: #FFF2CC;">${window.makeEditable(index, 'Quantity', row["Quantity"], 'number')}</td>
+                <td>${window.makeEditable(index, 'Item Description', row["Item Description"])}</td>
+                <td class="align-right" style="background: #FFF2CC;">${window.makeEditable(index, 'Quantity', row["Quantity"], 'number')}</td>
                 <td>${window.makeEditable(index, 'Status', row["Status"], 'status')}</td>
                 <td>${window.makeEditable(index, 'Start', row["Start"], 'date')}</td>
                 <td>${window.makeEditable(index, 'Finish', row["Finish"], 'date')}</td>
                 <td>${window.makeEditable(index, 'Due', row["Due"], 'date')}</td>
                 <td>${window.makeEditable(index, 'Cust Code', row["Cust Code"])}</td>
-                <td style="white-space: normal;">${integratedNotes}</td>
-                <td class="calc-cell">${row["# People"] || 0}</td>
-                <td style="white-space: normal;">${row["Machine"] || ''}</td>
-                <td>${window.makeEditable(index, 'Units/Minute', row["Units/Minute"], 'number')}</td>
-                <td>${window.makeEditable(index, 'units/Hours', uh ? uh : row["units/Hours"], 'number')}</td>
-                <td class="calc-cell" style="color: #1E8449;">$${parseFloat(row["Std Cost / Unit"] || 0).toFixed(4)}</td>
-                <td class="calc-cell">$${parseFloat(row["Cost x QTY"] || 0).toFixed(2)}</td>
-                <td style="background: #FFF2CC;">${window.makeEditable(index, 'Price / Unit', row["Price / Unit"], 'number')}</td>
-                <td class="calc-cell">$${parseFloat(row["Total Batch Sales"] || 0).toFixed(2)}</td>
-                <td class="calc-cell" style="color: #1E8449;">$${parseFloat(row["Profit"] || 0).toFixed(2)}</td>
+                <td>${integratedNotes}</td>
+                <td class="calc-cell align-right">${row["# People"] || 0}</td>
+                <td>${row["Machine"] || ''}</td>
+                <td class="align-right">${window.makeEditable(index, 'Units/Minute', row["Units/Minute"], 'number')}</td>
+                <td class="align-right">${window.makeEditable(index, 'units/Hours', uh ? uh : row["units/Hours"], 'number')}</td>
+                <td class="calc-cell align-right" style="color: #1E8449;">$${parseFloat(row["Std Cost / Unit"] || 0).toFixed(4)}</td>
+                <td class="calc-cell align-right">$${parseFloat(row["Cost x QTY"] || 0).toFixed(2)}</td>
+                <td class="align-right" style="background: #FFF2CC;">${window.makeEditable(index, 'Price / Unit', row["Price / Unit"], 'number')}</td>
+                <td class="calc-cell align-right">$${parseFloat(row["Total Batch Sales"] || 0).toFixed(2)}</td>
+                <td class="calc-cell align-right" style="color: #1E8449;">$${parseFloat(row["Profit"] || 0).toFixed(2)}</td>
             `;
             if (index === activeRowIndex) {
                 tr.classList.add('selected');
@@ -284,12 +274,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = masterData[index];
         document.getElementById('activeRowIndicator').innerText = `Active WO: ${row["WO"]} | Item: ${row["Item Number"]}`;
         
-        lastPriceMode = 'price'; // Default calculation flow on row select
+        lastPriceMode = 'price'; 
         loadBuilderStateFromRow(row);
         calculateAll();
     }
 
-    // --- Builder DOM Triggers ---
     window.removeBuilderRow = (btn) => {
         btn.closest('tr').remove();
         window.calcTrigger();
@@ -352,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tr.querySelectorAll('.calc-trigger').forEach(el => el.addEventListener('input', window.calcTrigger));
     }
 
-    // --- State Management ---
     function clearBuilder() {
         document.getElementById('bom-tbody').innerHTML = '';
         document.getElementById('labor-tbody').innerHTML = '';
@@ -394,14 +382,12 @@ document.addEventListener('DOMContentLoaded', () => {
         masterData[index].costBuilder = cb;
     }
 
-    // --- Core Calculation ---
     function calculateAll() {
         if (activeRowIndex < 0) return;
 
         let totalBom = 0, totalBomWip = 0;
         let journalLines = [];
 
-        // BOM
         document.querySelectorAll('.bom-row').forEach(r => {
             const mcost = parseFloat(r.querySelector('.b-mcost').value) || 0;
             const mcap = parseFloat(r.querySelector('.b-mcap').value) || 0;
@@ -423,7 +409,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('bom_cost_total').innerText = `$${totalBom.toFixed(2)}`;
         document.getElementById('bom_wip_total').innerText = `$${totalBomWip.toFixed(2)}`;
 
-        // Labor
         let totalLab = 0, totalLabWip = 0;
         document.querySelectorAll('.labor-row').forEach(r => {
             const mcost = parseFloat(r.querySelector('.l-mcost').value) || 0;
@@ -446,7 +431,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('labor_cost_total').innerText = `$${totalLab.toFixed(2)}`;
         document.getElementById('labor_wip_total').innerText = `$${totalLabWip.toFixed(2)}`;
 
-        // Overhead
         let totalOh = 0, totalOhWip = 0;
         let machinesList = [];
         document.querySelectorAll('.oh-row').forEach(r => {
@@ -471,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('oh_cost_total').innerText = `$${totalOh.toFixed(2)}`;
         document.getElementById('oh_wip_total').innerText = `$${totalOhWip.toFixed(2)}`;
 
-        // Summary Math & 2-Way Pricing Sync
         const batchTot = totalBom + totalLab + totalOh;
         const batchWipTot = totalBomWip + totalLabWip + totalOhWip;
         const pYield = parseFloat(pYieldInput.value) || 1;
@@ -486,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (lastPriceMode === 'margin') {
             if (pMargin >= 100) {
-                pPrice = 0; // Prevent infinite division
+                pPrice = 0; 
             } else {
                 pPrice = unitCost / (1 - (pMargin / 100));
             }
@@ -503,7 +486,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sales = pPrice * pYield;
         const profit = sales - batchTot;
 
-        // Push updates to MasterData row
         masterData[activeRowIndex]["Price / Unit"] = pPrice.toFixed(2);
         masterData[activeRowIndex]["Std Cost / Unit"] = unitCost.toFixed(4);
         masterData[activeRowIndex]["Cost x QTY"] = batchTot.toFixed(2);
@@ -517,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveBuilderStateToRow(activeRowIndex);
         renderDataGrid(); 
         
-        // Render Journal
         const jBody = document.querySelector('#journalTable tbody');
         jBody.innerHTML = '';
         if (batchWipTot > 0) {
