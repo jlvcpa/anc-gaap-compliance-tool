@@ -22,7 +22,7 @@
         table.costing-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; white-space: nowrap; }
         table.costing-table th, table.costing-table td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
         table.costing-table th { background-color: var(--header-bg); color: var(--header-text); text-align: center; font-weight: normal; }
-        table.costing-table tr.selected { outline: 2px solid #3498DB; }
+        table.costing-table tr.selected td { background-color: #D6EAF8 !important; }
         
         table.data-table input, table.data-table select { width: 100%; box-sizing: border-box; background-color: var(--input-bg); border: 1px solid #ccc; padding: 4px; }
         table.data-table input[type="number"] { text-align: right; }
@@ -36,20 +36,18 @@
         .btn-del { background-color: var(--btn-del); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         .btn-add { background-color: var(--btn-bg); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         
-        #masterDataGrid { table-layout: fixed; }
-        #masterDataGrid th { position: sticky; top: 0; z-index: 10; }
+        /* Data View Grid Styling for Extreme Width & Sticky Columns */
+        #masterDataGrid { table-layout: fixed; min-width: 2600px; }
+        #masterDataGrid th { white-space: normal !important; word-wrap: break-word; vertical-align: bottom; padding: 8px 4px; position: sticky; top: 0; z-index: 10; }
         #masterDataGrid td { background-color: #fff; cursor: pointer; }
         #masterDataGrid tr:hover td { background-color: #f1f1f1; }
-        #masterDataGrid tr.selected td { background-color: #D6EAF8 !important; }
+        
+        #masterDataGrid th:nth-child(1), #masterDataGrid td:nth-child(1) { position: sticky; left: 0; width: 40px; min-width: 40px; z-index: 11; }
+        #masterDataGrid th:nth-child(2), #masterDataGrid td:nth-child(2) { position: sticky; left: 40px; width: 80px; min-width: 80px; z-index: 11; }
+        #masterDataGrid th:nth-child(3), #masterDataGrid td:nth-child(3) { position: sticky; left: 120px; width: 60px; min-width: 60px; z-index: 11; }
+        #masterDataGrid th:nth-child(4), #masterDataGrid td:nth-child(4) { position: sticky; left: 180px; width: 150px; min-width: 150px; z-index: 11; }
+        #masterDataGrid th:nth-child(5), #masterDataGrid td:nth-child(5) { position: sticky; left: 330px; width: 250px; min-width: 250px; z-index: 11; border-right: 2px solid #ccc; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
 
-        /* Sticky Columns */
-        #masterDataGrid th:nth-child(1), #masterDataGrid td:nth-child(1) { position: sticky; left: 0; width: 50px; min-width: 50px; z-index: 11; }
-        #masterDataGrid th:nth-child(2), #masterDataGrid td:nth-child(2) { position: sticky; left: 50px; width: 80px; min-width: 80px; z-index: 11; }
-        #masterDataGrid th:nth-child(3), #masterDataGrid td:nth-child(3) { position: sticky; left: 130px; width: 60px; min-width: 60px; z-index: 11; }
-        #masterDataGrid th:nth-child(4), #masterDataGrid td:nth-child(4) { position: sticky; left: 190px; width: 150px; min-width: 150px; z-index: 11; }
-        #masterDataGrid th:nth-child(5), #masterDataGrid td:nth-child(5) { position: sticky; left: 340px; width: 280px; min-width: 280px; z-index: 11; border-right: 2px solid #ccc; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
-
-        /* Sticky Headers Top-Level Override */
         #masterDataGrid th:nth-child(1), #masterDataGrid th:nth-child(2), #masterDataGrid th:nth-child(3), #masterDataGrid th:nth-child(4), #masterDataGrid th:nth-child(5) { z-index: 12; background-color: var(--header-bg); }
 
         .note-input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 4px; background: white; }
@@ -170,37 +168,40 @@
                         <tr class="total-row"><td>TOTAL BATCH COST</td><td class="calc-cell" id="s_batch_cost" style="color: var(--header-bg); font-size: 1.1em;">$0.00</td></tr>
                         <tr><td style="background: var(--accent-bg); font-weight:bold;">Expected Process Yield (Qty)</td><td><input type="number" id="p_yield" value="100" style="width:100%; text-align:right; font-weight:bold;" class="calc-trigger"></td></tr>
                         <tr><td style="background: #E8F8F5; font-weight:bold; color: #1E8449;">STANDARD COST PER UNIT</td><td class="calc-cell" id="s_unit_cost" style="color: #1E8449; font-size: 1.1em;">$0.00</td></tr>
+                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Target Profit Margin (%)</td><td><input type="number" id="p_margin" value="0.00" style="width:100%; text-align:right; font-weight:bold;"></td></tr>
+                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Price Per Unit</td><td><input type="number" id="p_price" value="0.00" style="width:100%; text-align:right; font-weight:bold;"></td></tr>
+                        <tr class="total-row"><td style="background: #E8F8F5; color: #1E8449;">EXPECTED BATCH PROFIT</td><td class="calc-cell" id="s_profit" style="color: #1E8449; font-size: 1.1em;">$0.00</td></tr>
                     </table>
                 </div>
             </div>
 
             <div class="full-width">
                 <h2>Master Production Schedule (Data View)</h2>
-                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                     <table class="costing-table" id="masterDataGrid">
-                        <thead style="position: sticky; top: 0; z-index: 10;">
+                        <thead>
                             <tr>
                                 <th>Act</th>
                                 <th>WO</th>
                                 <th>Dash</th>
                                 <th>Item Number</th>
                                 <th>Item Description</th>
-                                <th style="background: #FFF2CC; color: #333; min-width: 80px;">Quantity</th>
-                                <th style="min-width: 120px;">Status</th>
-                                <th style="min-width: 150px;">Start (ddd, yyyy-mm-dd)</th>
-                                <th style="min-width: 150px;">Finish</th>
-                                <th style="min-width: 150px;">Due</th>
-                                <th>Cust Code</th>
+                                <th style="background: #FFF2CC; color: #333; min-width: 120px;">Quantity</th>
+                                <th style="min-width: 130px;">Status</th>
+                                <th style="min-width: 160px;">Start (ddd, yyyy-mm-dd)</th>
+                                <th style="min-width: 160px;">Finish</th>
+                                <th style="min-width: 160px;">Due</th>
+                                <th style="min-width: 120px;">Cust Code</th>
                                 <th style="min-width: 250px;">Integrated Notes</th>
-                                <th># People</th>
-                                <th style="min-width: 150px;">Machine</th>
-                                <th>Units/Minute</th>
-                                <th>Units/Hour</th>
-                                <th style="background: #E8F8F5; color: #1E8449; min-width: 120px;">Std Cost / Unit</th>
-                                <th style="min-width: 120px;">Total Batch Cost</th>
-                                <th style="background: #FFF2CC; color: #333; min-width: 100px;">Price / Unit</th>
-                                <th style="min-width: 120px;">Total Batch Sales</th>
-                                <th style="background: #E8F8F5; color: #1E8449; min-width: 120px;">Total Batch Profit</th>
+                                <th style="min-width: 90px;"># People</th>
+                                <th style="min-width: 180px;">Machine</th>
+                                <th style="min-width: 120px;">Units/Minute</th>
+                                <th style="min-width: 120px;">Units/Hour</th>
+                                <th style="background: #E8F8F5; color: #1E8449; min-width: 130px;">Std Cost / Unit</th>
+                                <th style="min-width: 130px;">Total Batch Cost</th>
+                                <th style="background: #FFF2CC; color: #333; min-width: 130px;">Price / Unit</th>
+                                <th style="min-width: 140px;">Total Batch Sales</th>
+                                <th style="background: #E8F8F5; color: #1E8449; min-width: 140px;">Total Batch Profit</th>
                             </tr>
                         </thead>
                         <tbody>
