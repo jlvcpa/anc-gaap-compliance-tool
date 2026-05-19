@@ -4,12 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let masterData = [];
     let activeRowIndex = -1;
     let activeRowRef = null;
+    let lastPriceMode = 'price'; // Tracks 2-way binding origin ('price' or 'margin')
 
     const loadJsonInput = document.getElementById('loadJsonInput');
     const saveJsonBtn = document.getElementById('saveJsonBtn');
     const exportExcelBtn = document.getElementById('exportExcelBtn');
     const addNewBatchBtn = document.getElementById('addNewBatchBtn');
     const pYieldInput = document.getElementById('p_yield');
+    const pMarginInput = document.getElementById('p_margin');
+    const pPriceInput = document.getElementById('p_price');
     
     window.calcTrigger = () => calculateAll();
     
@@ -24,6 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDataGrid();
             calculateAll();
         }
+    });
+
+    // 2-Way Binding Listeners for Pricing
+    pMarginInput.addEventListener('input', () => {
+        lastPriceMode = 'margin';
+        window.calcTrigger();
+    });
+
+    pPriceInput.addEventListener('input', () => {
+        lastPriceMode = 'price';
+        window.calcTrigger();
     });
 
     // File Ingestion
@@ -81,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let dateA = a["Start"] ? new Date(a["Start"]).getTime() : Infinity; 
             let dateB = b["Start"] ? new Date(b["Start"]).getTime() : Infinity; 
             
-            if (dateA !== dateB) return dateB - dateA; // Descending (latest to oldest, empty goes to top)
+            if (dateA !== dateB) return dateB - dateA; // Descending (latest to oldest)
             return (a["WO"] || "").localeCompare(b["WO"] || "");
         });
         if (activeRowRef) activeRowIndex = masterData.indexOf(activeRowRef);
@@ -179,6 +193,8 @@ document.addEventListener('DOMContentLoaded', () => {
             pYieldInput.value = masterData[index][field];
             calculateAll();
         } else if (index === activeRowIndex && field === 'Price / Unit') {
+            pPriceInput.value = masterData[index][field];
+            lastPriceMode = 'price';
             calculateAll();
         } else if (field === 'Start' || field === 'WO') {
             if (activeRowIndex >= 0) saveBuilderStateToRow(activeRowIndex); 
@@ -268,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const row = masterData[index];
         document.getElementById('activeRowIndicator').innerText = `Active WO: ${row["WO"]} | Item: ${row["Item Number"]}`;
         
+        lastPriceMode = 'price'; // Default calculation flow on row select
         loadBuilderStateFromRow(row);
         calculateAll();
     }
@@ -342,6 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('overhead-tbody').innerHTML = '';
         document.getElementById('activeRowIndicator').innerText = "No Active Batch Selected";
         pYieldInput.value = "100";
+        pPriceInput.value = "0.00";
+        pMarginInput.value = "0.00";
     }
 
     function loadBuilderStateFromRow(row) {
@@ -355,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cb.oh.length === 0) addOhRow(); else cb.oh.forEach(i => addOhRow(i.name, i.mcost, i.mcap, i.bqty, i.comp, i.note));
         
         pYieldInput.value = row["Quantity"] || 100;
+        pPriceInput.value = row["Price / Unit"] || 0;
     }
 
     function saveBuilderStateToRow(index) {
@@ -451,28 +471,48 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('oh_cost_total').innerText = `$${totalOh.toFixed(2)}`;
         document.getElementById('oh_wip_total').innerText = `$${totalOhWip.toFixed(2)}`;
 
-        // Summary Math
+        // Summary Math & 2-Way Pricing Sync
         const batchTot = totalBom + totalLab + totalOh;
         const batchWipTot = totalBomWip + totalLabWip + totalOhWip;
         const pYield = parseFloat(pYieldInput.value) || 1;
-        
         masterData[activeRowIndex]["Quantity"] = pYield; 
 
         document.getElementById('s_batch_cost').innerText = `$${batchTot.toFixed(2)}`;
         const unitCost = pYield > 0 ? (batchTot / pYield) : 0;
         document.getElementById('s_unit_cost').innerText = `$${unitCost.toFixed(4)}`;
         
-        const pPrice = parseFloat(masterData[activeRowIndex]["Price / Unit"]) || 0;
+        let pPrice = parseFloat(pPriceInput.value) || 0;
+        let pMargin = parseFloat(pMarginInput.value) || 0;
+
+        if (lastPriceMode === 'margin') {
+            if (pMargin >= 100) {
+                pPrice = 0; // Prevent infinite division
+            } else {
+                pPrice = unitCost / (1 - (pMargin / 100));
+            }
+            pPriceInput.value = pPrice.toFixed(2);
+        } else {
+            if (pPrice > 0) {
+                pMargin = ((pPrice - unitCost) / pPrice) * 100;
+            } else {
+                pMargin = 0;
+            }
+            pMarginInput.value = pMargin.toFixed(2);
+        }
+
         const sales = pPrice * pYield;
         const profit = sales - batchTot;
 
         // Push updates to MasterData row
+        masterData[activeRowIndex]["Price / Unit"] = pPrice.toFixed(2);
         masterData[activeRowIndex]["Std Cost / Unit"] = unitCost.toFixed(4);
         masterData[activeRowIndex]["Cost x QTY"] = batchTot.toFixed(2);
         masterData[activeRowIndex]["Total Batch Sales"] = sales.toFixed(2);
         masterData[activeRowIndex]["Profit"] = profit.toFixed(2);
         masterData[activeRowIndex]["# People"] = document.querySelectorAll('.labor-row').length;
         masterData[activeRowIndex]["Machine"] = machinesList.join(', ');
+
+        document.getElementById('s_profit').innerText = `$${profit.toFixed(2)}`;
 
         saveBuilderStateToRow(activeRowIndex);
         renderDataGrid(); 
