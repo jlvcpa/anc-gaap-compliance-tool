@@ -12,17 +12,17 @@
             --btn-bg: #28a745; --btn-del: #dc3545; --btn-blue: #007bff;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8F9FA; margin: 0; padding: 20px; box-sizing: border-box; }
-        .costing-dashboard { width: 100%; max-width: 1920px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; }
+        .costing-dashboard { width: 100%; max-width: 1920px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; box-sizing: border-box; }
         .costing-dashboard h2 { color: var(--header-bg); font-size: 16px; margin-top: 20px; margin-bottom: 10px; text-transform: uppercase; border-bottom: 2px solid var(--header-bg); padding-bottom: 5px; }
         
         .main-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; width: 100%; }
         .full-width { flex: 1 1 100%; }
         
-        .table-responsive { width: 100%; overflow-x: auto; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .table-responsive { width: 100%; overflow-x: auto; margin-bottom: 15px; border: 1px solid var(--border-color); box-sizing: border-box; }
+        
         table.costing-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; white-space: nowrap; }
         table.costing-table th, table.costing-table td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
         table.costing-table th { background-color: var(--header-bg); color: var(--header-text); text-align: center; font-weight: normal; }
-        table.costing-table tr.selected td { background-color: #D6EAF8 !important; }
         
         table.data-table input, table.data-table select { width: 100%; box-sizing: border-box; background-color: var(--input-bg); border: 1px solid #ccc; padding: 4px; }
         table.data-table input[type="number"] { text-align: right; }
@@ -36,28 +36,43 @@
         .btn-del { background-color: var(--btn-del); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         .btn-add { background-color: var(--btn-bg); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         
-        /* Data View Grid Styling for Extreme Width & Sticky Columns */
-        #masterDataGrid { table-layout: fixed; min-width: 2600px; }
-        #masterDataGrid th { white-space: normal !important; word-wrap: break-word; vertical-align: bottom; padding: 8px 4px; position: sticky; top: 0; z-index: 10; }
-        #masterDataGrid td { background-color: #fff; cursor: pointer; }
-        #masterDataGrid tr:hover td { background-color: #f1f1f1; }
+        /* Advanced Data View Grid Styling for Extreme Width & Sticky Columns */
+        #masterDataGrid { table-layout: auto; width: 100%; border-collapse: separate; border-spacing: 0; }
+        #masterDataGrid tr { background-color: #fff; }
+        #masterDataGrid td { background-color: inherit; cursor: pointer; }
+        #masterDataGrid tr:hover { background-color: #f1f1f1; }
+        #masterDataGrid tr.selected { background-color: #D6EAF8 !important; outline: 2px solid #3498DB; }
         
-        #masterDataGrid th:nth-child(1), #masterDataGrid td:nth-child(1) { position: sticky; left: 0; width: 40px; min-width: 40px; z-index: 11; }
-        #masterDataGrid th:nth-child(2), #masterDataGrid td:nth-child(2) { position: sticky; left: 40px; width: 80px; min-width: 80px; z-index: 11; }
-        #masterDataGrid th:nth-child(3), #masterDataGrid td:nth-child(3) { position: sticky; left: 120px; width: 60px; min-width: 60px; z-index: 11; }
-        #masterDataGrid th:nth-child(4), #masterDataGrid td:nth-child(4) { position: sticky; left: 180px; width: 150px; min-width: 150px; z-index: 11; }
-        #masterDataGrid th:nth-child(5), #masterDataGrid td:nth-child(5) { position: sticky; left: 330px; width: 250px; min-width: 250px; z-index: 11; border-right: 2px solid #ccc; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+        #masterDataGrid th { white-space: normal !important; word-wrap: break-word; vertical-align: bottom; padding: 8px 6px; position: sticky; top: 0; z-index: 10; border: 1px solid var(--border-color); }
+        
+        /* Frozen First 5 Columns (Precise Width Targeting for Auto-fit Rules) */
+        #masterDataGrid th:nth-child(1), #masterDataGrid td:nth-child(1) { position: sticky; left: 0; width: 40px; min-width: 40px; max-width: 40px; z-index: 11; text-align: center; }
+        #masterDataGrid th:nth-child(2), #masterDataGrid td:nth-child(2) { position: sticky; left: 40px; width: 85px; min-width: 85px; max-width: 85px; z-index: 11; }
+        #masterDataGrid th:nth-child(3), #masterDataGrid td:nth-child(3) { position: sticky; left: 125px; width: 65px; min-width: 65px; max-width: 65px; z-index: 11; }
+        #masterDataGrid th:nth-child(4), #masterDataGrid td:nth-child(4) { position: sticky; left: 190px; width: 150px; min-width: 150px; max-width: 150px; z-index: 11; }
+        #masterDataGrid th:nth-child(5), #masterDataGrid td:nth-child(5) { position: sticky; left: 340px; width: 260px; min-width: 260px; max-width: 260px; z-index: 11; border-right: 2px solid #999; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
 
+        /* Ensure Headers sit Above Data in Sticky Zone */
         #masterDataGrid th:nth-child(1), #masterDataGrid th:nth-child(2), #masterDataGrid th:nth-child(3), #masterDataGrid th:nth-child(4), #masterDataGrid th:nth-child(5) { z-index: 12; background-color: var(--header-bg); }
+
+        /* General Limits for Remaining Columns (Max 20 chars wrap + Min Widths) */
+        #masterDataGrid th:nth-child(n+6), #masterDataGrid td:nth-child(n+6) {
+            min-width: 110px; max-width: 180px; white-space: normal; word-wrap: break-word; border: 1px solid var(--border-color);
+        }
 
         .note-input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 4px; background: white; }
 
         /* Inline Editing Styles */
+        .editable-cell { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; width: 100%; word-break: break-word; }
         .editable-cell .editor { display: none; width: 100%; box-sizing: border-box; padding: 4px; border: 1px solid #3498DB; font-size: 0.85rem; }
-        .editable-cell.editing .editor { display: inline-block; }
+        .editable-cell.editing .editor { display: block; }
         .editable-cell.editing .val, .editable-cell.editing .edit-icon { display: none; }
-        .edit-icon { cursor: pointer; opacity: 0.2; font-size: 0.8em; margin-left: 6px; }
+        .edit-icon { cursor: pointer; opacity: 0.2; font-size: 0.8em; flex-shrink: 0; }
         .editable-cell:hover .edit-icon { opacity: 1; }
+        
+        .align-right { text-align: right; }
+        .align-right .editable-cell { justify-content: flex-end; }
+        .align-right .editor { text-align: right; }
     </style>
 </head>
 <body>
@@ -182,26 +197,26 @@
                         <thead>
                             <tr>
                                 <th>Act</th>
-                                <th>WO</th>
-                                <th>Dash</th>
+                                <th class="align-right">WO</th>
+                                <th class="align-right">Dash</th>
                                 <th>Item Number</th>
                                 <th>Item Description</th>
-                                <th style="background: #FFF2CC; color: #333; min-width: 120px;">Quantity</th>
-                                <th style="min-width: 130px;">Status</th>
+                                <th class="align-right" style="background: #FFF2CC; color: #333; min-width: 120px;">Quantity</th>
+                                <th style="min-width: 140px;">Status</th>
                                 <th style="min-width: 160px;">Start (ddd, yyyy-mm-dd)</th>
                                 <th style="min-width: 160px;">Finish</th>
                                 <th style="min-width: 160px;">Due</th>
                                 <th style="min-width: 120px;">Cust Code</th>
                                 <th style="min-width: 250px;">Integrated Notes</th>
-                                <th style="min-width: 90px;"># People</th>
+                                <th class="align-right" style="min-width: 90px;"># People</th>
                                 <th style="min-width: 180px;">Machine</th>
-                                <th style="min-width: 120px;">Units/Minute</th>
-                                <th style="min-width: 120px;">Units/Hour</th>
-                                <th style="background: #E8F8F5; color: #1E8449; min-width: 130px;">Std Cost / Unit</th>
-                                <th style="min-width: 130px;">Total Batch Cost</th>
-                                <th style="background: #FFF2CC; color: #333; min-width: 130px;">Price / Unit</th>
-                                <th style="min-width: 140px;">Total Batch Sales</th>
-                                <th style="background: #E8F8F5; color: #1E8449; min-width: 140px;">Total Batch Profit</th>
+                                <th class="align-right" style="min-width: 120px;">Units/Minute</th>
+                                <th class="align-right" style="min-width: 120px;">Units/Hour</th>
+                                <th class="align-right" style="background: #E8F8F5; color: #1E8449; min-width: 130px;">Std Cost / Unit</th>
+                                <th class="align-right" style="min-width: 130px;">Total Batch Cost</th>
+                                <th class="align-right" style="background: #FFF2CC; color: #333; min-width: 130px;">Price / Unit</th>
+                                <th class="align-right" style="min-width: 140px;">Total Batch Sales</th>
+                                <th class="align-right" style="background: #E8F8F5; color: #1E8449; min-width: 140px;">Total Batch Profit</th>
                             </tr>
                         </thead>
                         <tbody>
