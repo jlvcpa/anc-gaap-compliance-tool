@@ -3,6 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     let masterData = [];
     let activeRowIndex = -1;
+    let activeRowRef = null;
 
     const loadJsonInput = document.getElementById('loadJsonInput');
     const saveJsonBtn = document.getElementById('saveJsonBtn');
@@ -38,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         row.costBuilder = { bom: [], labor: [], oh: [], yield: row["Quantity"] || 100, price: row["Price / Unit"] || 0.00 };
                     }
                 });
+                activeRowIndex = -1;
+                activeRowRef = null;
+                clearBuilder();
+                sortMasterData();
                 renderDataGrid();
             } catch (err) {
                 alert("Invalid JSON format.");
@@ -70,19 +75,36 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
     });
 
+    // Sorting Engine
+    function sortMasterData() {
+        masterData.sort((a, b) => {
+            let dateA = a["Start"] ? new Date(a["Start"]).getTime() : Infinity; 
+            let dateB = b["Start"] ? new Date(b["Start"]).getTime() : Infinity; 
+            
+            if (dateA !== dateB) return dateB - dateA; // Descending (latest to oldest, empty goes to top)
+            return (a["WO"] || "").localeCompare(b["WO"] || "");
+        });
+        if (activeRowRef) activeRowIndex = masterData.indexOf(activeRowRef);
+    }
+
     // Add / Delete Batch
     addNewBatchBtn.addEventListener('click', () => {
+        if (activeRowIndex >= 0) saveBuilderStateToRow(activeRowIndex); 
+
         const newBatch = {
             "WO": "NEW", "Dash": "1", "Item Number": "", "Item Description": "New Batch", 
             "Quantity": 100, "Status": "Staged", "Start": "", "Finish": "", "Due": "", 
             "Cust Code": "", "Notes": "", "Price / Unit": 0, "Units/Minute": "", "units/Hours": "",
             costBuilder: { bom: [], labor: [], oh: [], yield: 100, price: 0 }
         };
-        masterData.push(newBatch);
-        activeRowIndex = masterData.length - 1;
+        
+        masterData.push(newBatch); 
+        activeRowRef = newBatch;
+        sortMasterData(); // Forces the empty date row to index 0
         renderDataGrid();
-        loadBuilderStateFromRow(newBatch);
-        calculateAll();
+        
+        const newTr = document.querySelector(`#masterDataGrid tbody`).children[activeRowIndex];
+        selectRow(activeRowIndex, newTr);
     });
 
     window.deleteRow = (index, event) => {
@@ -91,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             masterData.splice(index, 1);
             if(activeRowIndex === index) {
                 activeRowIndex = -1;
+                activeRowRef = null;
                 clearBuilder();
             } else if (activeRowIndex > index) {
                 activeRowIndex--;
@@ -157,6 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
             calculateAll();
         } else if (index === activeRowIndex && field === 'Price / Unit') {
             calculateAll();
+        } else if (field === 'Start' || field === 'WO') {
+            if (activeRowIndex >= 0) saveBuilderStateToRow(activeRowIndex); 
+            sortMasterData();
+            renderDataGrid();
         } else {
             renderDataGrid();
         }
@@ -203,16 +230,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${window.makeEditable(index, 'WO', row["WO"])}</td>
                 <td>${window.makeEditable(index, 'Dash', row["Dash"])}</td>
                 <td>${window.makeEditable(index, 'Item Number', row["Item Number"])}</td>
-                <td>${window.makeEditable(index, 'Item Description', row["Item Description"])}</td>
+                <td style="white-space: normal;">${window.makeEditable(index, 'Item Description', row["Item Description"])}</td>
                 <td style="background: #FFF2CC;">${window.makeEditable(index, 'Quantity', row["Quantity"], 'number')}</td>
                 <td>${window.makeEditable(index, 'Status', row["Status"], 'status')}</td>
                 <td>${window.makeEditable(index, 'Start', row["Start"], 'date')}</td>
                 <td>${window.makeEditable(index, 'Finish', row["Finish"], 'date')}</td>
                 <td>${window.makeEditable(index, 'Due', row["Due"], 'date')}</td>
                 <td>${window.makeEditable(index, 'Cust Code', row["Cust Code"])}</td>
-                <td style="white-space: normal; min-width: 200px;">${integratedNotes}</td>
+                <td style="white-space: normal;">${integratedNotes}</td>
                 <td class="calc-cell">${row["# People"] || 0}</td>
-                <td style="white-space: normal; max-width: 150px; overflow: hidden; text-overflow: ellipsis;">${row["Machine"] || ''}</td>
+                <td style="white-space: normal;">${row["Machine"] || ''}</td>
                 <td>${window.makeEditable(index, 'Units/Minute', row["Units/Minute"], 'number')}</td>
                 <td>${window.makeEditable(index, 'units/Hours', uh ? uh : row["units/Hours"], 'number')}</td>
                 <td class="calc-cell" style="color: #1E8449;">$${parseFloat(row["Std Cost / Unit"] || 0).toFixed(4)}</td>
@@ -233,10 +260,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeRowIndex >= 0 && activeRowIndex !== index) saveBuilderStateToRow(activeRowIndex);
 
         activeRowIndex = index;
+        activeRowRef = masterData[index];
+
         document.querySelectorAll('#masterDataGrid tbody tr').forEach(tr => tr.classList.remove('selected'));
         if(trElement) trElement.classList.add('selected');
         
-        loadBuilderStateFromRow(masterData[index]);
+        const row = masterData[index];
+        document.getElementById('activeRowIndicator').innerText = `Active WO: ${row["WO"]} | Item: ${row["Item Number"]}`;
+        
+        loadBuilderStateFromRow(row);
         calculateAll();
     }
 
@@ -414,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             r.querySelector('.o-total').innerText = tot.toFixed(2);
             r.querySelector('.o-wip').innerText = wip.toFixed(2);
             
-            if (wip > 0 && item) journalLines.push({ account: `Factory Overhead Applied: ${item}`, debit: 0, credit: wip, memo: `Applied Overhead: ${bqty} hrs @ $${rate.toFixed(4)}`});
+            if (wip > 0 && item) journalLines.push({ account: `Factory Overhead Applied: ${item}`, debit: 0, credit: wip, memo: `Applied Overhead: ${bqty} drivers @ $${rate.toFixed(4)}`});
         });
         document.getElementById('oh_cost_total').innerText = `$${totalOh.toFixed(2)}`;
         document.getElementById('oh_wip_total').innerText = `$${totalOhWip.toFixed(2)}`;
@@ -443,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         masterData[activeRowIndex]["Machine"] = machinesList.join(', ');
 
         saveBuilderStateToRow(activeRowIndex);
-        renderDataGrid(); // Refresh Grid to show new values
+        renderDataGrid(); 
         
         // Render Journal
         const jBody = document.querySelector('#journalTable tbody');
