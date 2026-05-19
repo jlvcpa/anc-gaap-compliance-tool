@@ -12,7 +12,7 @@
             --btn-bg: #28a745; --btn-del: #dc3545; --btn-blue: #007bff;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8F9FA; margin: 0; padding: 20px; box-sizing: border-box; }
-        .costing-dashboard { width: 100%; max-width: 1600px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; }
+        .costing-dashboard { width: 100%; max-width: 1920px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; }
         .costing-dashboard h2 { color: var(--header-bg); font-size: 16px; margin-top: 20px; margin-bottom: 10px; text-transform: uppercase; border-bottom: 2px solid var(--header-bg); padding-bottom: 5px; }
         
         .main-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; width: 100%; }
@@ -22,7 +22,7 @@
         table.costing-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; white-space: nowrap; }
         table.costing-table th, table.costing-table td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
         table.costing-table th { background-color: var(--header-bg); color: var(--header-text); text-align: center; font-weight: normal; }
-        table.costing-table tr.selected { background-color: #D6EAF8 !important; outline: 2px solid #3498DB; }
+        table.costing-table tr.selected { outline: 2px solid #3498DB; }
         
         table.data-table input, table.data-table select { width: 100%; box-sizing: border-box; background-color: var(--input-bg); border: 1px solid #ccc; padding: 4px; }
         table.data-table input[type="number"] { text-align: right; }
@@ -36,8 +36,22 @@
         .btn-del { background-color: var(--btn-del); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         .btn-add { background-color: var(--btn-bg); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         
-        #masterDataGrid tbody tr { cursor: pointer; transition: background 0.2s; }
-        #masterDataGrid tbody tr:hover { background-color: #f1f1f1; }
+        #masterDataGrid { table-layout: fixed; }
+        #masterDataGrid th { position: sticky; top: 0; z-index: 10; }
+        #masterDataGrid td { background-color: #fff; cursor: pointer; }
+        #masterDataGrid tr:hover td { background-color: #f1f1f1; }
+        #masterDataGrid tr.selected td { background-color: #D6EAF8 !important; }
+
+        /* Sticky Columns */
+        #masterDataGrid th:nth-child(1), #masterDataGrid td:nth-child(1) { position: sticky; left: 0; width: 50px; min-width: 50px; z-index: 11; }
+        #masterDataGrid th:nth-child(2), #masterDataGrid td:nth-child(2) { position: sticky; left: 50px; width: 80px; min-width: 80px; z-index: 11; }
+        #masterDataGrid th:nth-child(3), #masterDataGrid td:nth-child(3) { position: sticky; left: 130px; width: 60px; min-width: 60px; z-index: 11; }
+        #masterDataGrid th:nth-child(4), #masterDataGrid td:nth-child(4) { position: sticky; left: 190px; width: 150px; min-width: 150px; z-index: 11; }
+        #masterDataGrid th:nth-child(5), #masterDataGrid td:nth-child(5) { position: sticky; left: 340px; width: 280px; min-width: 280px; z-index: 11; border-right: 2px solid #ccc; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
+
+        /* Sticky Headers Top-Level Override */
+        #masterDataGrid th:nth-child(1), #masterDataGrid th:nth-child(2), #masterDataGrid th:nth-child(3), #masterDataGrid th:nth-child(4), #masterDataGrid th:nth-child(5) { z-index: 12; background-color: var(--header-bg); }
+
         .note-input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 4px; background: white; }
 
         /* Inline Editing Styles */
@@ -166,27 +180,27 @@
                     <table class="costing-table" id="masterDataGrid">
                         <thead style="position: sticky; top: 0; z-index: 10;">
                             <tr>
-                                <th style="width: 40px;">Act</th>
+                                <th>Act</th>
                                 <th>WO</th>
                                 <th>Dash</th>
                                 <th>Item Number</th>
                                 <th>Item Description</th>
-                                <th style="background: #FFF2CC; color: #333;">Quantity</th>
-                                <th>Status</th>
-                                <th>Start (ddd, yyyy-mm-dd)</th>
-                                <th>Finish</th>
-                                <th>Due</th>
+                                <th style="background: #FFF2CC; color: #333; min-width: 80px;">Quantity</th>
+                                <th style="min-width: 120px;">Status</th>
+                                <th style="min-width: 150px;">Start (ddd, yyyy-mm-dd)</th>
+                                <th style="min-width: 150px;">Finish</th>
+                                <th style="min-width: 150px;">Due</th>
                                 <th>Cust Code</th>
-                                <th>Integrated Notes</th>
+                                <th style="min-width: 250px;">Integrated Notes</th>
                                 <th># People</th>
-                                <th>Machine</th>
+                                <th style="min-width: 150px;">Machine</th>
                                 <th>Units/Minute</th>
                                 <th>Units/Hour</th>
-                                <th style="background: #E8F8F5; color: #1E8449;">Std Cost / Unit</th>
-                                <th>Total Batch Cost</th>
-                                <th style="background: #FFF2CC; color: #333;">Price / Unit</th>
-                                <th>Total Batch Sales</th>
-                                <th style="background: #E8F8F5; color: #1E8449;">Total Batch Profit</th>
+                                <th style="background: #E8F8F5; color: #1E8449; min-width: 120px;">Std Cost / Unit</th>
+                                <th style="min-width: 120px;">Total Batch Cost</th>
+                                <th style="background: #FFF2CC; color: #333; min-width: 100px;">Price / Unit</th>
+                                <th style="min-width: 120px;">Total Batch Sales</th>
+                                <th style="background: #E8F8F5; color: #1E8449; min-width: 120px;">Total Batch Profit</th>
                             </tr>
                         </thead>
                         <tbody>
