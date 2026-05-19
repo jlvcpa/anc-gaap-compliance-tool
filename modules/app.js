@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${row["Cost x QTY"] || '0.00'}</td>
                 <td>${row["Profit"] || '0.00'}</td>
             `;
+            if (index === activeRowIndex) {
+                tr.classList.add('selected');
+            }
             tbody.appendChild(tr);
         });
     }
