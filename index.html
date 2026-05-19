@@ -9,20 +9,20 @@
             --header-bg: #1F4E78; --header-text: #FFFFFF;
             --input-bg: #FFF2CC; --calc-bg: #F2F2F2;
             --accent-bg: #D9E1F2; --border-color: #D9D9D9;
-            --btn-bg: #28a745; --btn-del: #dc3545;
+            --btn-bg: #28a745; --btn-del: #dc3545; --btn-blue: #007bff;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8F9FA; margin: 0; padding: 20px; box-sizing: border-box; }
-        .costing-dashboard { width: 100%; max-width: 1400px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; }
+        .costing-dashboard { width: 100%; max-width: 1600px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; }
         .costing-dashboard h2 { color: var(--header-bg); font-size: 16px; margin-top: 20px; margin-bottom: 10px; text-transform: uppercase; border-bottom: 2px solid var(--header-bg); padding-bottom: 5px; }
         
         .main-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; width: 100%; }
         .full-width { flex: 1 1 100%; }
         
         .table-responsive { width: 100%; overflow-x: auto; margin-bottom: 15px; border: 1px solid var(--border-color); }
-        table.costing-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
-        table.costing-table th, table.costing-table td { border: 1px solid var(--border-color); padding: 6px 10px; text-align: left; }
+        table.costing-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; white-space: nowrap; }
+        table.costing-table th, table.costing-table td { border: 1px solid var(--border-color); padding: 6px 8px; text-align: left; }
         table.costing-table th { background-color: var(--header-bg); color: var(--header-text); text-align: center; font-weight: normal; }
-        table.costing-table tr.selected { background-color: #D6EAF8 !important; }
+        table.costing-table tr.selected { background-color: #D6EAF8 !important; outline: 2px solid #3498DB; }
         
         table.data-table input, table.data-table select { width: 100%; box-sizing: border-box; background-color: var(--input-bg); border: 1px solid #ccc; padding: 4px; }
         table.data-table input[type="number"] { text-align: right; }
@@ -33,12 +33,19 @@
         .toolbar { display: flex; gap: 10px; margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; align-items: center; }
         .btn { background-color: var(--btn-bg); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: background 0.2s; }
         .btn:hover { filter: brightness(1.1); }
-        .btn-del { background-color: var(--btn-del); color: white; border: none; padding: 2px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
-        .btn-add { background-color: var(--btn-bg); color: white; border: none; padding: 2px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
+        .btn-del { background-color: var(--btn-del); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
+        .btn-add { background-color: var(--btn-bg); color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
         
         #masterDataGrid tbody tr { cursor: pointer; transition: background 0.2s; }
         #masterDataGrid tbody tr:hover { background-color: #f1f1f1; }
         .note-input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 4px; background: white; }
+
+        /* Inline Editing Styles */
+        .editable-cell .editor { display: none; width: 100%; box-sizing: border-box; padding: 4px; border: 1px solid #3498DB; font-size: 0.85rem; }
+        .editable-cell.editing .editor { display: inline-block; }
+        .editable-cell.editing .val, .editable-cell.editing .edit-icon { display: none; }
+        .edit-icon { cursor: pointer; opacity: 0.2; font-size: 0.8em; margin-left: 6px; }
+        .editable-cell:hover .edit-icon { opacity: 1; }
     </style>
 </head>
 <body>
@@ -49,31 +56,35 @@
             <label class="btn" style="background-color: #2c3e50;">
                 📂 Load master.json <input type="file" id="loadJsonInput" accept=".json" style="display:none;">
             </label>
+            <button class="btn" id="saveJsonBtn" style="background-color: #007bff;">💾 Save Master JSON</button>
             <button class="btn" id="exportExcelBtn" style="background-color: #207245;">📊 Export Data View to Excel</button>
-            <span id="activeRowIndicator" style="margin-left: auto; font-weight: bold; color: #d35400;">No Row Selected</span>
+            <button class="btn" id="addNewBatchBtn" style="background-color: #f39c12;">➕ Add New Batch</button>
+            <span id="activeRowIndicator" style="margin-left: auto; font-weight: bold; color: #d35400; padding: 8px; background: #fff; border-radius: 4px; border: 1px solid #ccc;">No Active Batch Selected</span>
         </div>
 
         <div class="main-layout">
-            <div class="full-width" style="display: flex; gap: 20px;">
-                <div style="flex: 1;">
-                    <h2>1. Build Parameters & Direct Materials (BOM)</h2>
+            <div class="full-width" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 800px;">
+                    <h2>1. Direct Materials (BOM)</h2>
                     <table class="costing-table data-table" id="bom-table">
                         <thead>
                             <tr>
                                 <th style="width: 40px;"><button class="btn-add" id="addBomBtn">+</button></th>
                                 <th>Raw Material / Component</th>
-                                <th style="width: 80px;">Qty</th>
-                                <th style="width: 100px;">Cost/Unit</th>
                                 <th style="width: 100px;">Total Cost</th>
-                                <th style="width: 80px;">% Comp (POC)</th>
-                                <th style="width: 100px;">WIP Cost</th>
-                                <th>Notes</th>
+                                <th style="width: 100px;">Total Capacity</th>
+                                <th style="width: 80px;">Rate/Unit</th>
+                                <th style="width: 90px;">Batch Qty</th>
+                                <th style="width: 90px;">Total Cost</th>
+                                <th style="width: 70px;">% Comp</th>
+                                <th style="width: 90px;">WIP Cost</th>
+                                <th style="width: 150px;">Notes</th>
                             </tr>
                         </thead>
                         <tbody id="bom-tbody"></tbody>
                         <tfoot>
                             <tr class="total-row">
-                                <td colspan="4" style="text-align: right;">TOTAL RAW MATERIAL COST:</td>
+                                <td colspan="6" style="text-align: right;">TOTAL RAW MATERIAL COST:</td>
                                 <td class="calc-cell" id="bom_cost_total">$0.00</td>
                                 <td></td>
                                 <td class="calc-cell" id="bom_wip_total">$0.00</td>
@@ -88,18 +99,20 @@
                             <tr>
                                 <th style="width: 40px;"><button class="btn-add" id="addLaborBtn">+</button></th>
                                 <th>Production Stage / Function</th>
-                                <th style="width: 80px;">Hrs</th>
-                                <th style="width: 100px;">Rate/Hr</th>
                                 <th style="width: 100px;">Total Cost</th>
-                                <th style="width: 80px;">% Comp (POC)</th>
-                                <th style="width: 100px;">WIP Cost</th>
-                                <th>Notes</th>
+                                <th style="width: 100px;">Total Est Hrs</th>
+                                <th style="width: 80px;">Rate/Hr</th>
+                                <th style="width: 90px;">Batch Hrs</th>
+                                <th style="width: 90px;">Total Cost</th>
+                                <th style="width: 70px;">% Comp</th>
+                                <th style="width: 90px;">WIP Cost</th>
+                                <th style="width: 150px;">Notes</th>
                             </tr>
                         </thead>
                         <tbody id="labor-tbody"></tbody>
                         <tfoot>
                             <tr class="total-row">
-                                <td colspan="4" style="text-align: right;">TOTAL LABOR COST:</td>
+                                <td colspan="6" style="text-align: right;">TOTAL LABOR COST:</td>
                                 <td class="calc-cell" id="labor_cost_total">$0.00</td>
                                 <td></td>
                                 <td class="calc-cell" id="labor_wip_total">$0.00</td>
@@ -114,18 +127,20 @@
                             <tr>
                                 <th style="width: 40px;"><button class="btn-add" id="addOhBtn">+</button></th>
                                 <th>Overhead Category</th>
-                                <th style="width: 80px;">Hrs/Driver</th>
-                                <th style="width: 100px;">Rate/Driver</th>
                                 <th style="width: 100px;">Total Cost</th>
-                                <th style="width: 80px;">% Comp (POC)</th>
-                                <th style="width: 100px;">WIP Cost</th>
-                                <th>Notes</th>
+                                <th style="width: 100px;">Total Driver Hrs</th>
+                                <th style="width: 80px;">Rate/Hr</th>
+                                <th style="width: 90px;">Batch Hrs</th>
+                                <th style="width: 90px;">Total Cost</th>
+                                <th style="width: 70px;">% Comp</th>
+                                <th style="width: 90px;">WIP Cost</th>
+                                <th style="width: 150px;">Notes</th>
                             </tr>
                         </thead>
                         <tbody id="overhead-tbody"></tbody>
                         <tfoot>
                             <tr class="total-row">
-                                <td colspan="4" style="text-align: right;">TOTAL OVERHEAD COST:</td>
+                                <td colspan="6" style="text-align: right;">TOTAL OVERHEAD COST:</td>
                                 <td class="calc-cell" id="oh_cost_total">$0.00</td>
                                 <td></td>
                                 <td class="calc-cell" id="oh_wip_total">$0.00</td>
@@ -135,53 +150,61 @@
                     </table>
                 </div>
 
-                <div style="flex: 0.4;">
+                <div style="flex: 0.6; min-width: 300px;">
                     <h2>Process Yield & Standard Cost</h2>
                     <table class="costing-table">
-                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Expected Process Yield</td><td><input type="number" id="p_yield" value="100" style="width:100%; text-align:right;" class="calc-trigger"></td></tr>
-                        <tr class="total-row"><td>TOTAL BATCH COST</td><td class="calc-cell" id="s_batch_cost">$0.00</td></tr>
-                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Standard Cost Per Unit</td><td class="calc-cell" id="s_unit_cost">$0.00</td></tr>
-                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Sale Price Per Unit</td><td><input type="number" id="p_price" value="0.00" style="width:100%; text-align:right;" class="calc-trigger"></td></tr>
-                        <tr class="total-row"><td>EXPECTED PROFIT</td><td class="calc-cell" id="s_profit">$0.00</td></tr>
+                        <tr class="total-row"><td>TOTAL BATCH COST</td><td class="calc-cell" id="s_batch_cost" style="color: var(--header-bg); font-size: 1.1em;">$0.00</td></tr>
+                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Expected Process Yield (Qty)</td><td><input type="number" id="p_yield" value="100" style="width:100%; text-align:right; font-weight:bold;" class="calc-trigger"></td></tr>
+                        <tr><td style="background: #E8F8F5; font-weight:bold; color: #1E8449;">STANDARD COST PER UNIT</td><td class="calc-cell" id="s_unit_cost" style="color: #1E8449; font-size: 1.1em;">$0.00</td></tr>
                     </table>
                 </div>
             </div>
 
             <div class="full-width">
                 <h2>Master Production Schedule (Data View)</h2>
-                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="costing-table" id="masterDataGrid" style="white-space: nowrap;">
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="costing-table" id="masterDataGrid">
                         <thead style="position: sticky; top: 0; z-index: 10;">
                             <tr>
+                                <th style="width: 40px;">Act</th>
                                 <th>WO</th>
+                                <th>Dash</th>
                                 <th>Item Number</th>
                                 <th>Item Description</th>
-                                <th>Quantity</th>
-                                <th>Start Date</th>
-                                <th>Due Date</th>
+                                <th style="background: #FFF2CC; color: #333;">Quantity</th>
+                                <th>Status</th>
+                                <th>Start (ddd, yyyy-mm-dd)</th>
+                                <th>Finish</th>
+                                <th>Due</th>
                                 <th>Cust Code</th>
                                 <th>Integrated Notes</th>
-                                <th>Std Cost / Unit</th>
-                                <th>Total Cost</th>
-                                <th>Profit</th>
+                                <th># People</th>
+                                <th>Machine</th>
+                                <th>Units/Minute</th>
+                                <th>Units/Hour</th>
+                                <th style="background: #E8F8F5; color: #1E8449;">Std Cost / Unit</th>
+                                <th>Total Batch Cost</th>
+                                <th style="background: #FFF2CC; color: #333;">Price / Unit</th>
+                                <th>Total Batch Sales</th>
+                                <th style="background: #E8F8F5; color: #1E8449;">Total Batch Profit</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="11" style="text-align:center; padding: 20px; color: #666;">Load master.json to populate grid.</td></tr>
+                            <tr><td colspan="21" style="text-align:center; padding: 20px; color: #666;">Load master.json or Add New Batch to populate grid.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <div class="full-width">
-                <h2>Generated Journal Entry</h2>
+            <div class="full-width" style="margin-bottom: 40px;">
+                <h2>Generated Journal Entry (Active Batch)</h2>
                 <div class="table-responsive">
                     <table class="costing-table" id="journalTable">
                         <thead>
                             <tr>
                                 <th>Account</th>
-                                <th style="text-align: right;">Debit</th>
-                                <th style="text-align: right;">Credit</th>
+                                <th style="text-align: right; width: 150px;">Debit</th>
+                                <th style="text-align: right; width: 150px;">Credit</th>
                                 <th>Memo Description</th>
                             </tr>
                         </thead>
