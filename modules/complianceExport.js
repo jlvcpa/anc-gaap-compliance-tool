@@ -2,7 +2,7 @@
 export default class ComplianceExportProtocol {
     constructor(masterData) {
         this.masterData = masterData;
-        this.journalEntries =;
+        this.journalEntries = [];
     }
 
     /**
@@ -21,7 +21,7 @@ export default class ComplianceExportProtocol {
             entry_type: "ASC_470_Reclassification",
             date: this.masterData.enterprise_metadata.reporting_period,
             memo: "Reclassify current portion of SBA 7(a) facility to short-term liabilities.",
-            lines:
+            lines: []
         });
     }
 
@@ -69,7 +69,7 @@ export default class ComplianceExportProtocol {
             entry_type: "ASC_326_CECL_Provision",
             date: this.masterData.enterprise_metadata.reporting_period,
             memo: "Establish CECL allowance targeting 60-day delinquencies and massive concentration risk.",
-            lines:
+            lines: []
         });
     }
 
@@ -84,7 +84,7 @@ export default class ComplianceExportProtocol {
             entry_type: "Internal_Control_Correction",
             date: this.masterData.enterprise_metadata.reporting_period,
             memo: "Reverse Vendor AME-007 internal commingling to cleanse external AP aging.",
-            lines:
+            lines: []
         });
     }
 
