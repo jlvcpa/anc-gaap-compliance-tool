@@ -8,7 +8,206 @@
         :root {
             --primary-bg: #1A365D; --primary-text: #FFFFFF;
             --accent-blue: #2980B9; --danger-red: #C0392B;
-            --success-green: #27AE60; --warning-yellow: #F39C12;
+            --success-green: #27AE60; --warning-yellow: #F39C12;<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VilBooks Costing & Production Terminal</title>
+    <style>
+        :root {
+            --header-bg: #1F4E78; --header-text: #FFFFFF;
+            --input-bg: #FFF2CC; --calc-bg: #F2F2F2;
+            --accent-bg: #D9E1F2; --border-color: #D9D9D9;
+            --btn-bg: #28a745; --btn-del: #dc3545;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8F9FA; margin: 0; padding: 20px; box-sizing: border-box; }
+        .costing-dashboard { width: 100%; max-width: 1400px; margin: 0 auto; background: #fff; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; }
+        .costing-dashboard h2 { color: var(--header-bg); font-size: 16px; margin-top: 20px; margin-bottom: 10px; text-transform: uppercase; border-bottom: 2px solid var(--header-bg); padding-bottom: 5px; }
+        
+        .main-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; width: 100%; }
+        .full-width { flex: 1 1 100%; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        table.costing-table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+        table.costing-table th, table.costing-table td { border: 1px solid var(--border-color); padding: 6px 10px; text-align: left; }
+        table.costing-table th { background-color: var(--header-bg); color: var(--header-text); text-align: center; font-weight: normal; }
+        table.costing-table tr.selected { background-color: #D6EAF8 !important; }
+        
+        table.data-table input, table.data-table select { width: 100%; box-sizing: border-box; background-color: var(--input-bg); border: 1px solid #ccc; padding: 4px; }
+        table.data-table input[type="number"] { text-align: right; }
+        table.data-table td.calc-cell { background-color: var(--calc-bg); text-align: right; font-weight: bold; }
+        
+        .total-row td { font-weight: bold; background-color: var(--accent-bg); border-top: 2px solid var(--header-bg); }
+        
+        .toolbar { display: flex; gap: 10px; margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 5px; flex-wrap: wrap; align-items: center; }
+        .btn { background-color: var(--btn-bg); color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: background 0.2s; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn-del { background-color: var(--btn-del); color: white; border: none; padding: 2px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
+        .btn-add { background-color: var(--btn-bg); color: white; border: none; padding: 2px 8px; cursor: pointer; border-radius: 3px; font-weight:bold; }
+        
+        #masterDataGrid tbody tr { cursor: pointer; transition: background 0.2s; }
+        #masterDataGrid tbody tr:hover { background-color: #f1f1f1; }
+        .note-input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; padding: 4px; background: white; }
+    </style>
+</head>
+<body>
+    <div class="costing-dashboard">
+        <h1 style="color: var(--header-bg); margin-top: 0;">VilBooks Production Cost Builder</h1>
+        
+        <div class="toolbar">
+            <label class="btn" style="background-color: #2c3e50;">
+                📂 Load master.json <input type="file" id="loadJsonInput" accept=".json" style="display:none;">
+            </label>
+            <button class="btn" id="exportExcelBtn" style="background-color: #207245;">📊 Export Data View to Excel</button>
+            <span id="activeRowIndicator" style="margin-left: auto; font-weight: bold; color: #d35400;">No Row Selected</span>
+        </div>
+
+        <div class="main-layout">
+            <div class="full-width" style="display: flex; gap: 20px;">
+                <div style="flex: 1;">
+                    <h2>1. Build Parameters & Direct Materials (BOM)</h2>
+                    <table class="costing-table data-table" id="bom-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><button class="btn-add" id="addBomBtn">+</button></th>
+                                <th>Raw Material / Component</th>
+                                <th style="width: 80px;">Qty</th>
+                                <th style="width: 100px;">Cost/Unit</th>
+                                <th style="width: 100px;">Total Cost</th>
+                                <th style="width: 80px;">% Comp (POC)</th>
+                                <th style="width: 100px;">WIP Cost</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bom-tbody"></tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="4" style="text-align: right;">TOTAL RAW MATERIAL COST:</td>
+                                <td class="calc-cell" id="bom_cost_total">$0.00</td>
+                                <td></td>
+                                <td class="calc-cell" id="bom_wip_total">$0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <h2>2. Labor Burden Calculator</h2>
+                    <table class="costing-table data-table" id="labor-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><button class="btn-add" id="addLaborBtn">+</button></th>
+                                <th>Production Stage / Function</th>
+                                <th style="width: 80px;">Hrs</th>
+                                <th style="width: 100px;">Rate/Hr</th>
+                                <th style="width: 100px;">Total Cost</th>
+                                <th style="width: 80px;">% Comp (POC)</th>
+                                <th style="width: 100px;">WIP Cost</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="labor-tbody"></tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="4" style="text-align: right;">TOTAL LABOR COST:</td>
+                                <td class="calc-cell" id="labor_cost_total">$0.00</td>
+                                <td></td>
+                                <td class="calc-cell" id="labor_wip_total">$0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <h2>3. Factory Overhead</h2>
+                    <table class="costing-table data-table" id="overhead-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><button class="btn-add" id="addOhBtn">+</button></th>
+                                <th>Overhead Category</th>
+                                <th style="width: 80px;">Hrs/Driver</th>
+                                <th style="width: 100px;">Rate/Driver</th>
+                                <th style="width: 100px;">Total Cost</th>
+                                <th style="width: 80px;">% Comp (POC)</th>
+                                <th style="width: 100px;">WIP Cost</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overhead-tbody"></tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="4" style="text-align: right;">TOTAL OVERHEAD COST:</td>
+                                <td class="calc-cell" id="oh_cost_total">$0.00</td>
+                                <td></td>
+                                <td class="calc-cell" id="oh_wip_total">$0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div style="flex: 0.4;">
+                    <h2>Process Yield & Standard Cost</h2>
+                    <table class="costing-table">
+                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Expected Process Yield</td><td><input type="number" id="p_yield" value="100" style="width:100%; text-align:right;" class="calc-trigger"></td></tr>
+                        <tr class="total-row"><td>TOTAL BATCH COST</td><td class="calc-cell" id="s_batch_cost">$0.00</td></tr>
+                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Standard Cost Per Unit</td><td class="calc-cell" id="s_unit_cost">$0.00</td></tr>
+                        <tr><td style="background: var(--accent-bg); font-weight:bold;">Sale Price Per Unit</td><td><input type="number" id="p_price" value="0.00" style="width:100%; text-align:right;" class="calc-trigger"></td></tr>
+                        <tr class="total-row"><td>EXPECTED PROFIT</td><td class="calc-cell" id="s_profit">$0.00</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="full-width">
+                <h2>Master Production Schedule (Data View)</h2>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="costing-table" id="masterDataGrid" style="white-space: nowrap;">
+                        <thead style="position: sticky; top: 0; z-index: 10;">
+                            <tr>
+                                <th>WO</th>
+                                <th>Item Number</th>
+                                <th>Item Description</th>
+                                <th>Quantity</th>
+                                <th>Start Date</th>
+                                <th>Due Date</th>
+                                <th>Cust Code</th>
+                                <th>Integrated Notes</th>
+                                <th>Std Cost / Unit</th>
+                                <th>Total Cost</th>
+                                <th>Profit</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="11" style="text-align:center; padding: 20px; color: #666;">Load master.json to populate grid.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="full-width">
+                <h2>Generated Journal Entry</h2>
+                <div class="table-responsive">
+                    <table class="costing-table" id="journalTable">
+                        <thead>
+                            <tr>
+                                <th>Account</th>
+                                <th style="text-align: right;">Debit</th>
+                                <th style="text-align: right;">Credit</th>
+                                <th>Memo Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center; color: #666;">Select a row and configure costs to generate journal.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
             --surface-light: #ECF0F1; --border-color: #BDC3C7;
         }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: #F8F9FA; margin: 0; padding: 20px; }
