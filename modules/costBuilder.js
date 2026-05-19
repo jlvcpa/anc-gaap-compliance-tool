@@ -3,7 +3,7 @@ export default class StandardCostBuilder {
     constructor(depreciationEngine, masterData) {
         this.depreciationEngine = depreciationEngine;
         this.inventoryLedger = masterData.inventory_ledger;
-        this.bomItems =;
+        this.bomItems = [];
     }
 
     /**
@@ -26,7 +26,7 @@ export default class StandardCostBuilder {
         }
 
         // Defaults to book value if valid, otherwise falls back to system average
-        return material.book_value > 0? material.book_value : material.system_average_cost;
+        return material.book_value > 0 ? material.book_value : material.system_average_cost;
     }
 
     /**
